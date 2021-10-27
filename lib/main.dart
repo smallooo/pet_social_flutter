@@ -48,6 +48,7 @@ class _PetSocialState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (context) => _groceryManager),
         ChangeNotifierProvider(
           create: (context) => _appStateManager,
         ),

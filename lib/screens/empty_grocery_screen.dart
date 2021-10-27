@@ -18,7 +18,7 @@ class EmptyGroceryScreen extends StatelessWidget {
             Flexible(
               child: AspectRatio(
                 aspectRatio: 1 / 1,
-                child: Image.asset('assets/fooderlich_assets/empty_list.png'),
+                child: Image.asset('assets/petsocial_assets/empty_list.png'),
               ),
             ),
             const Text(

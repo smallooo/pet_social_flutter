@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pet_social_flutter/models/AppStateManager.dart';
 import 'package:pet_social_flutter/models/grocery_manager.dart';
+import 'package:pet_social_flutter/models/petsocial_pages.dart';
 import 'package:pet_social_flutter/models/profile_manager.dart';
 import 'package:pet_social_flutter/screens/grocery_item_screen.dart';
 import 'package:pet_social_flutter/screens/profile_screen.dart';
@@ -73,6 +74,21 @@ class AppRouter extends RouterDelegate<AppLink>
       return false;
     }
 
+    if (route.settings.name == PetSocialPages.onboardingPath) {
+      appStateManager.logout();
+    }
+    if (route.settings.name == PetSocialPages.groceryItemDetails) {
+      groceryManager.groceryItemTapped(-1);
+    }
+
+    if (route.settings.name == PetSocialPages.profilePath) {
+      profileManager.tapOnProfile(false);
+    }
+
+    if (route.settings.name == PetSocialPages.raywenderlich) {
+      profileManager.tapOnRaywenderlich(false);
+    }
+
     return true;
   }
 
@@ -80,12 +96,47 @@ class AppRouter extends RouterDelegate<AppLink>
   AppLink get currentConfiguration => getCurrentPath();
 
   AppLink getCurrentPath() {
-    return AppLink(location: AppLink.kOnboardingPath);
+    if (!appStateManager.isLoggedIn) {
+      return AppLink(location: AppLink.kLoginPath);
+    } else if (!appStateManager.isOnboardingComplete) {
+      return AppLink(location: AppLink.kOnboardingPath);
+    } else if (profileManager.didSelectUser) {
+      return AppLink(location: AppLink.kProfilePath);
+    } else if (groceryManager.isCreatingNewItem) {
+      return AppLink(location: AppLink.kItemPath);
+    } else if (groceryManager.selectedGroceryItem != null) {
+      final id = groceryManager.selectedGroceryItem?.id;
+      return AppLink(
+        location: AppLink.kItemPath,
+        itemId: id,
+      );
+    } else {
+      return AppLink(
+          location: AppLink.kHomePath,
+          currentTab: appStateManager.getSelectedTab);
+    }
   }
 
   @override
   Future<void> setNewRoutePath(AppLink newLink) async {
     switch (newLink.location) {
+      case AppLink.kProfilePath:
+        profileManager.tapOnProfile(true);
+        break;
+      case AppLink.kItemPath:
+        final itemId = newLink.itemId;
+        if (itemId != null) {
+          groceryManager.setSelectedGroceryItem(itemId);
+        } else {
+          groceryManager.createNewItem();
+        }
+        profileManager.tapOnProfile(false);
+        break;
+      case AppLink.kHomePath:
+        appStateManager.goToTab(newLink.currentTab ?? 0);
+        profileManager.tapOnProfile(false);
+        groceryManager.groceryItemTapped(-1);
+        break;
       default:
         break;
     }
