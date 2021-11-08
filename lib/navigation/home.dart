@@ -89,7 +89,7 @@ class _HomeState extends State<Home> {
       child: GestureDetector(
         child: const CircleAvatar(
           backgroundColor: Colors.transparent,
-          backgroundImage: AssetImage('assets/profile_pics/person_stef.jpeg'),
+          backgroundImage: AssetImage('assets/profile_pics/person_joe.jpeg'),
         ),
         onTap: () {
           Provider.of<ProfileManager>(context, listen: false)

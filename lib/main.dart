@@ -9,7 +9,6 @@ import 'models/profile_manager.dart';
 import 'navigation/app_route_parser.dart';
 import 'navigation/app_router.dart';
 
-
 void main() {
   runApp(const MyApp());
 }

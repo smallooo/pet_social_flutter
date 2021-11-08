@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:pet_social_flutter/models/AppStateManager.dart';
 import 'package:provider/provider.dart';
 
@@ -42,6 +43,23 @@ class EmptyGroceryScreen extends StatelessWidget {
               onPressed: () {
                 Provider.of<AppStateManager>(context, listen: false)
                     .goToRecipes();
+              },
+            ),
+            MaterialButton(
+              textColor: Colors.white,
+              child: const Text('Post Pet'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30.0),
+              ),
+              color: Colors.green,
+              onPressed: () {
+                // Provider.of<AppStateManager>(context, listen: false)
+                //     .goToRecipes();
+
+                Fluttertoast.showToast(msg: "This is Center Short Toast", toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.CENTER, timeInSecForIosWeb: 1, backgroundColor: Colors.red,
+                    textColor: Colors.white, fontSize: 16.0);
+
               },
             ),
           ],
