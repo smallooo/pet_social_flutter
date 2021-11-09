@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pet_social_flutter/api/MockFooderlichService.dart';
+import 'package:pet_social_flutter/api/mock_fooderlich_service.dart';
 import 'package:pet_social_flutter/components/recipes_grid_view.dart';
 import 'package:pet_social_flutter/models/simple_recipe.dart';
 

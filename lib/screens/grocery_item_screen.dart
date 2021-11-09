@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pet_social_flutter/models/grocery_item.dart';
 import 'package:pet_social_flutter/models/petsocial_pages.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:async';
-import 'dart:io';
+import 'package:pet_social_flutter/utils/ToastUtils.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_player/video_player.dart';
+import 'dart:io';
 
 class GroceryItemScreen extends StatefulWidget {
   final Function(GroceryItem) onCreate;
@@ -49,6 +48,12 @@ class GroceryItemScreen extends StatefulWidget {
 }
 
 class _GroceryItemScreenState extends State<GroceryItemScreen> {
+  List<XFile>? _imageFileList;
+
+  set _imageFile(XFile? value) {
+    _imageFileList = value == null ? null : [value];
+  }
+  dynamic _pickImageError;
 
   final _nameController = TextEditingController();
   String _name = '';
@@ -57,37 +62,12 @@ class _GroceryItemScreenState extends State<GroceryItemScreen> {
   TimeOfDay _timeOfDay = TimeOfDay.now();
   Color _currentColor = Colors.green;
   int _currentSliderValue = 0;
-  String? _retrieveDataError;
-
   bool isVideo = false;
-  dynamic _pickImageError;
-
-  VideoPlayerController? _controller;
-  VideoPlayerController? _toBeDisposed;
 
   final ImagePicker _picker = ImagePicker();
   final TextEditingController maxWidthController = TextEditingController();
   final TextEditingController maxHeightController = TextEditingController();
   final TextEditingController qualityController = TextEditingController();
-
-  Future<void> _playVideo(XFile? file) async {
-    if (file != null && mounted) {
-      await _disposeVideoController();
-      late VideoPlayerController controller;
-      if (kIsWeb) {
-        controller = VideoPlayerController.network(file.path);
-      } else {
-        controller = VideoPlayerController.file(File(file.path));
-      }
-      _controller = controller;
-      final double volume = kIsWeb ? 0.0 : 1.0;
-      await controller.setVolume(volume);
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.play();
-      setState(() {});
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,32 +77,18 @@ class _GroceryItemScreenState extends State<GroceryItemScreen> {
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: () {
-              final groceryItem = GroceryItem(
-                id: widget.originalItem?.id ?? const Uuid().v1(),
-                name: _nameController.text,
-                importance: _importance,
-                color: _currentColor,
-                quantity: _currentSliderValue,
-                date: DateTime(
-                  _dueDate.year,
-                  _dueDate.month,
-                  _dueDate.day,
-                  _timeOfDay.hour,
-                  _timeOfDay.minute,
-                ),
-              );
-
-              if (widget.isUpdating) {
-                widget.onUpdate(groceryItem, widget.index);
-              } else {
-                widget.onCreate(groceryItem);
+              if(_nameController.text.isNotEmpty && _imageFileList!= null && _imageFileList!.isNotEmpty){
+                ToastUtils.toast('Upload post');
+                SystemChannels.textInput.invokeMethod('TextInput.hide');
+              }else{
+                ToastUtils.toast('Please enter a post content and add images');
+                SystemChannels.textInput.invokeMethod('TextInput.hide');
               }
             },
           )
         ],
         elevation: 0.0,
-        title: Text(
-          'Posting',
+        title: Text('Posting',
           style: GoogleFonts.lato(fontWeight: FontWeight.w600),
         ),
       ),
@@ -131,32 +97,13 @@ class _GroceryItemScreenState extends State<GroceryItemScreen> {
         child: ListView(
           children: [
             buildNameField(),
+            buildImageField(),
             buildTimeField(context),
           ],
         ),
       ),
     );
   }
-
-  Text? _getRetrieveErrorWidget() {
-    if (_retrieveDataError != null) {
-      final Text result = Text(_retrieveDataError!);
-      _retrieveDataError = null;
-      return result;
-    }
-    return null;
-  }
-
-  Future<void> _disposeVideoController() async {
-    if (_toBeDisposed != null) {
-      await _toBeDisposed!.dispose();
-    }
-    _toBeDisposed = _controller;
-    _controller = null;
-  }
-
-
-
 
   Widget buildNameField() {
     return Column(
@@ -182,6 +129,40 @@ class _GroceryItemScreenState extends State<GroceryItemScreen> {
     );
   }
 
+  Widget buildImageField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        buildSubImageField()
+      ],
+    );
+  }
+
+
+  Widget buildSubImageField() {
+    if (_imageFileList == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            label: 'image_picker_example_picked_image',
+            child: Image.asset('assets/petsocial_assets/recommend.png'),
+          )
+        ],
+      );
+    }else{
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            label: 'image_picker_example_picked_image',
+            child: Image.file(File(_imageFileList![0].path)),
+          )
+        ],
+      );
+    }
+  }
+
 
 
   Widget buildTimeField(BuildContext context) {
@@ -198,8 +179,12 @@ class _GroceryItemScreenState extends State<GroceryItemScreen> {
             TextButton(
               child: const Text('Select'),
               onPressed: () async {
-                isVideo = false;
-
+                try {
+                  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+                  setState(() {_imageFile = pickedFile;});
+                } catch (e) {
+                  setState(() {_pickImageError = e;});
+                }
               },
             ),
           ],
@@ -237,60 +222,11 @@ class _GroceryItemScreenState extends State<GroceryItemScreen> {
 
   @override
   void dispose() {
-    _disposeVideoController();
     _nameController.dispose();
     super.dispose();
   }
 }
 
-class AspectRatioVideo extends StatefulWidget {
-  AspectRatioVideo(this.controller);
-  final VideoPlayerController? controller;
-
-  @override
-  AspectRatioVideoState createState() => AspectRatioVideoState();
-}
-
-class AspectRatioVideoState extends State<AspectRatioVideo> {
-  VideoPlayerController? get controller => widget.controller;
-  bool initialized = false;
-
-  void _onVideoControllerUpdate() {
-    if (!mounted) {
-      return;
-    }
-    if (initialized != controller!.value.isInitialized) {
-      initialized = controller!.value.isInitialized;
-      setState(() {});
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    controller!.addListener(_onVideoControllerUpdate);
-  }
-
-  @override
-  void dispose() {
-    controller!.removeListener(_onVideoControllerUpdate);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (initialized) {
-      return Center(
-        child: AspectRatio(
-          aspectRatio: controller!.value.aspectRatio,
-          child: VideoPlayer(controller!),
-        ),
-      );
-    } else {
-      return Container();
-    }
-  }
-}
-
 typedef void OnPickImageCallback(
     double? maxWidth, double? maxHeight, int? quality);
+
